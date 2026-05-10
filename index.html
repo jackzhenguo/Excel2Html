@@ -45,6 +45,15 @@
               <option value="pie">饼图</option>
             </select>
           </label>
+          <label>
+            <span>配色主题</span>
+            <select id="themeSelect" disabled>
+              <option value="aurora">极光蓝绿</option>
+              <option value="sunset">日落暖橙</option>
+              <option value="forest">森林青翠</option>
+              <option value="ink">墨色商务</option>
+            </select>
+          </label>
         </div>
       </section>
 
@@ -88,6 +97,7 @@
                 </div>
                 <span id="chartBadge" class="badge">本地</span>
               </div>
+              <div id="chartInsights" class="chart-insights" aria-label="图表摘要"></div>
               <div class="chart-frame">
                 <canvas id="chartCanvas" aria-label="数据图表"></canvas>
               </div>

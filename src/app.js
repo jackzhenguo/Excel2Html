@@ -5,6 +5,7 @@
     categorySelect: document.getElementById("categorySelect"),
     valueSelect: document.getElementById("valueSelect"),
     chartTypeSelect: document.getElementById("chartTypeSelect"),
+    themeSelect: document.getElementById("themeSelect"),
     emptyState: document.getElementById("emptyState"),
     dashboard: document.getElementById("dashboard"),
     rowCount: document.getElementById("rowCount"),
@@ -14,6 +15,7 @@
     chartTitle: document.getElementById("chartTitle"),
     chartHint: document.getElementById("chartHint"),
     chartBadge: document.getElementById("chartBadge"),
+    chartInsights: document.getElementById("chartInsights"),
     chartCanvas: document.getElementById("chartCanvas"),
     previewTable: document.getElementById("previewTable"),
     tableHint: document.getElementById("tableHint"),
@@ -35,27 +37,43 @@
     pie: "饼图"
   };
 
-  const palette = [
-    "#2563eb",
-    "#14b8a6",
-    "#f97316",
-    "#7c3aed",
-    "#dc2626",
-    "#059669",
-    "#db2777",
-    "#4f46e5",
-    "#ca8a04",
-    "#0891b2",
-    "#9333ea",
-    "#475569",
-    "#ea580c"
-  ];
+  const chartThemes = {
+    aurora: {
+      primary: "#2563eb",
+      secondary: "#14b8a6",
+      soft: "rgba(37, 99, 235, 0.14)",
+      grid: "rgba(37, 99, 235, 0.12)",
+      colors: ["#2563eb", "#14b8a6", "#f97316", "#7c3aed", "#dc2626", "#059669", "#db2777", "#4f46e5", "#ca8a04", "#0891b2", "#9333ea", "#475569", "#ea580c"]
+    },
+    sunset: {
+      primary: "#f97316",
+      secondary: "#db2777",
+      soft: "rgba(249, 115, 22, 0.16)",
+      grid: "rgba(249, 115, 22, 0.13)",
+      colors: ["#f97316", "#db2777", "#facc15", "#ef4444", "#a855f7", "#06b6d4", "#84cc16", "#fb7185", "#f59e0b", "#8b5cf6", "#22c55e", "#64748b", "#e11d48"]
+    },
+    forest: {
+      primary: "#059669",
+      secondary: "#0f766e",
+      soft: "rgba(5, 150, 105, 0.15)",
+      grid: "rgba(5, 150, 105, 0.13)",
+      colors: ["#059669", "#0f766e", "#65a30d", "#0891b2", "#2563eb", "#ca8a04", "#16a34a", "#4f46e5", "#84cc16", "#14b8a6", "#9333ea", "#475569", "#f97316"]
+    },
+    ink: {
+      primary: "#334155",
+      secondary: "#2563eb",
+      soft: "rgba(51, 65, 85, 0.14)",
+      grid: "rgba(51, 65, 85, 0.13)",
+      colors: ["#334155", "#2563eb", "#0f766e", "#7c3aed", "#ea580c", "#0891b2", "#475569", "#9333ea", "#059669", "#ca8a04", "#dc2626", "#64748b", "#14b8a6"]
+    }
+  };
 
   elements.fileInput.addEventListener("change", handleFileUpload);
   elements.sheetSelect.addEventListener("change", () => loadSheet(elements.sheetSelect.value));
   elements.categorySelect.addEventListener("change", renderChart);
   elements.valueSelect.addEventListener("change", renderChart);
   elements.chartTypeSelect.addEventListener("change", renderChart);
+  elements.themeSelect.addEventListener("change", renderChart);
 
   async function handleFileUpload(event) {
     const file = event.target.files?.[0];
@@ -118,6 +136,7 @@
     elements.categorySelect.disabled = state.headers.length === 0;
     elements.valueSelect.disabled = state.numericColumns.length === 0;
     elements.chartTypeSelect.disabled = state.numericColumns.length === 0;
+    elements.themeSelect.disabled = state.numericColumns.length === 0;
   }
 
   function fillSelect(select, values, selectedValue) {
@@ -181,9 +200,11 @@
     const categoryColumn = elements.categorySelect.value;
     const valueColumn = elements.valueSelect.value;
     const chartType = elements.chartTypeSelect.value;
+    const theme = chartThemes[elements.themeSelect.value] || chartThemes.aurora;
 
     if (!categoryColumn || !valueColumn) {
       destroyChart();
+      elements.chartInsights.replaceChildren();
       elements.chartTitle.textContent = "没有可用图表";
       elements.chartHint.textContent = "当前工作表未识别到数值字段。";
       return;
@@ -191,8 +212,24 @@
 
     const chartData = DataVizUtils.buildChartData(state.rows, categoryColumn, valueColumn, chartType);
     const isPie = chartType === "pie";
+    const isLine = chartType === "line";
+    const isBar = chartType === "bar";
+
+    if (chartData.values.length === 0) {
+      destroyChart();
+      elements.chartInsights.replaceChildren();
+      elements.chartTitle.textContent = "没有可用图表";
+      elements.chartHint.textContent = "当前字段没有可用数值。";
+      return;
+    }
 
     destroyChart();
+    renderChartInsights(chartData, valueColumn);
+
+    const context = elements.chartCanvas.getContext("2d");
+    const chartGradient = createChartGradient(context, theme);
+    const lineGradient = createLineGradient(context, theme);
+
     state.chart = new Chart(elements.chartCanvas, {
       type: chartType,
       data: {
@@ -201,29 +238,60 @@
           {
             label: valueColumn,
             data: chartData.values,
-            borderColor: "#2563eb",
-            backgroundColor: isPie ? palette : "rgba(37, 99, 235, 0.72)",
-            pointRadius: chartType === "line" ? 3 : 0,
-            pointHoverRadius: chartType === "line" ? 5 : 0,
-            borderWidth: chartType === "line" ? 2 : 1.5,
-            tension: chartType === "line" ? 0.25 : 0
+            borderColor: isPie ? "#ffffff" : theme.primary,
+            backgroundColor: isPie ? theme.colors : isLine ? lineGradient : chartGradient,
+            hoverBackgroundColor: isPie ? theme.colors : theme.secondary,
+            borderRadius: isBar ? 9 : 0,
+            borderSkipped: false,
+            maxBarThickness: 46,
+            pointRadius: isLine ? 4 : 0,
+            pointHoverRadius: isLine ? 7 : 0,
+            pointBackgroundColor: "#ffffff",
+            pointBorderColor: theme.primary,
+            pointBorderWidth: isLine ? 2 : 0,
+            borderWidth: isPie ? 3 : isLine ? 3 : 1.5,
+            hoverOffset: isPie ? 9 : 0,
+            spacing: isPie ? 2 : 0,
+            fill: isLine,
+            tension: isLine ? 0.34 : 0
           }
         ]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        animation: {
+          duration: 720,
+          easing: "easeOutQuart"
+        },
+        layout: {
+          padding: {
+            top: 4,
+            right: 12,
+            bottom: 4,
+            left: 6
+          }
+        },
         plugins: {
           legend: {
             display: isPie,
             position: "bottom",
             labels: {
-              boxWidth: 12,
+              boxWidth: 9,
+              usePointStyle: true,
               color: "#334155",
-              font: { size: 12 }
+              padding: 16,
+              font: { size: 12, weight: "700" }
             }
           },
           tooltip: {
+            backgroundColor: "rgba(15, 23, 42, 0.92)",
+            borderColor: "rgba(255, 255, 255, 0.12)",
+            borderWidth: 1,
+            padding: 12,
+            displayColors: true,
+            titleFont: { size: 13, weight: "800" },
+            bodyFont: { size: 13, weight: "600" },
             callbacks: {
               label(context) {
                 const label = context.label || context.dataset.label || "";
@@ -237,6 +305,7 @@
           x: {
             ticks: {
               color: "#64748b",
+              font: { size: 12, weight: "700" },
               maxRotation: 45,
               minRotation: 0
             },
@@ -244,8 +313,17 @@
           },
           y: {
             beginAtZero: true,
-            ticks: { color: "#64748b" },
-            grid: { color: "rgba(148, 163, 184, 0.2)" }
+            ticks: {
+              color: "#64748b",
+              callback(value) {
+                return compactNumber(value);
+              }
+            },
+            grid: {
+              color: theme.grid,
+              drawTicks: false
+            },
+            border: { display: false }
           }
         }
       }
@@ -254,6 +332,61 @@
     elements.chartTitle.textContent = `${chartTypeNames[chartType]}：${valueColumn}`;
     elements.chartBadge.textContent = chartTypeNames[chartType];
     elements.chartHint.textContent = `${categoryColumn} 分组，展示 ${chartData.shownGroups} 项。`;
+  }
+
+  function createChartGradient(context, theme) {
+    const height = elements.chartCanvas.parentElement?.clientHeight || 320;
+    const gradient = context.createLinearGradient(0, 0, 0, height);
+    gradient.addColorStop(0, theme.primary);
+    gradient.addColorStop(0.62, theme.secondary);
+    gradient.addColorStop(1, "rgba(255, 255, 255, 0.9)");
+    return gradient;
+  }
+
+  function createLineGradient(context, theme) {
+    const height = elements.chartCanvas.parentElement?.clientHeight || 320;
+    const gradient = context.createLinearGradient(0, 0, 0, height);
+    gradient.addColorStop(0, theme.soft);
+    gradient.addColorStop(1, "rgba(255, 255, 255, 0)");
+    return gradient;
+  }
+
+  function renderChartInsights(chartData, valueColumn) {
+    const stats = DataVizUtils.summarizeValues(chartData.values);
+    const items = [
+      ["总计", formatNumber(stats.total)],
+      ["均值", formatNumber(stats.average)],
+      ["最大", formatNumber(stats.max)],
+      ["分组", `${chartData.totalGroups} 组`]
+    ];
+
+    const fragment = document.createDocumentFragment();
+    items.forEach(([label, value]) => {
+      const card = document.createElement("article");
+      card.className = "insight";
+      const title = document.createElement("span");
+      title.textContent = label;
+      const number = document.createElement("strong");
+      number.textContent = value;
+      card.append(title, number);
+      fragment.appendChild(card);
+    });
+
+    elements.chartInsights.replaceChildren(fragment);
+    elements.chartInsights.setAttribute("data-value-column", valueColumn);
+  }
+
+  function compactNumber(value) {
+    return new Intl.NumberFormat("zh-CN", {
+      notation: "compact",
+      maximumFractionDigits: 1
+    }).format(value);
+  }
+
+  function formatNumber(value) {
+    return new Intl.NumberFormat("zh-CN", {
+      maximumFractionDigits: 2
+    }).format(value);
   }
 
   function destroyChart() {

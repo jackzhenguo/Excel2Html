@@ -46,6 +46,17 @@ test("buildChartData 按分类字段汇总数值", () => {
   assert.equal(data.totalGroups, 2);
 });
 
+test("summarizeValues 生成图表摘要统计", () => {
+  const stats = utils.summarizeValues([10, 20, 30.12345, Number.NaN]);
+  assert.deepEqual(stats, {
+    count: 3,
+    total: 60.1235,
+    average: 20.0412,
+    max: 30.12345,
+    min: 10
+  });
+});
+
 test("getPreviewRows 默认只返回前 50 行", () => {
   const rows = Array.from({ length: 60 }, (_, index) => ({ id: index + 1 }));
   assert.equal(utils.getPreviewRows(rows).length, 50);

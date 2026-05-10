@@ -111,6 +111,32 @@
     };
   }
 
+  function summarizeValues(values) {
+    const numbers = values.filter((value) => Number.isFinite(value));
+    if (numbers.length === 0) {
+      return {
+        count: 0,
+        total: 0,
+        average: 0,
+        max: 0,
+        min: 0
+      };
+    }
+
+    const total = numbers.reduce((sum, value) => sum + value, 0);
+    return {
+      count: numbers.length,
+      total: roundToFour(total),
+      average: roundToFour(total / numbers.length),
+      max: Math.max(...numbers),
+      min: Math.min(...numbers)
+    };
+  }
+
+  function roundToFour(value) {
+    return Math.round((value + 1e-10) * 10000) / 10000;
+  }
+
   function getPreviewRows(rows, limit = 50) {
     return rows.slice(0, limit);
   }
@@ -123,6 +149,7 @@
     detectNumericColumns,
     chooseDefaultCategory,
     buildChartData,
+    summarizeValues,
     getPreviewRows,
     toDisplayText
   };
