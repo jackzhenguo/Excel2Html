@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>本地 Excel 数据可视化工具</title>
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="toolbar" aria-label="文件上传和字段配置">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">DV</span>
+          <div>
+            <h1>本地数据可视化</h1>
+            <p>上传 Excel 文件，立即预览数据并生成图表。</p>
+          </div>
+        </div>
+
+        <label class="upload-box" for="fileInput">
+          <span class="upload-icon" aria-hidden="true">↑</span>
+          <span class="upload-title">选择 Excel 文件</span>
+          <span class="upload-subtitle">支持 .xlsx、.xls、.csv，本地解析不上传</span>
+          <input id="fileInput" type="file" accept=".xlsx,.xls,.csv" />
+        </label>
+
+        <div class="control-grid">
+          <label>
+            <span>工作表</span>
+            <select id="sheetSelect" disabled></select>
+          </label>
+          <label>
+            <span>分类字段</span>
+            <select id="categorySelect" disabled></select>
+          </label>
+          <label>
+            <span>数值字段</span>
+            <select id="valueSelect" disabled></select>
+          </label>
+          <label>
+            <span>图表类型</span>
+            <select id="chartTypeSelect" disabled>
+              <option value="bar">柱状图</option>
+              <option value="line">折线图</option>
+              <option value="pie">饼图</option>
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <section class="content">
+        <div id="emptyState" class="empty-state">
+          <div class="empty-visual" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <h2>等待上传数据文件</h2>
+          <p>选择文件后会自动识别表头、预览数据，并推荐可视化字段。</p>
+        </div>
+
+        <section id="dashboard" class="dashboard hidden" aria-live="polite">
+          <div class="summary-row">
+            <article class="metric">
+              <span>数据行数</span>
+              <strong id="rowCount">0</strong>
+            </article>
+            <article class="metric">
+              <span>字段数量</span>
+              <strong id="columnCount">0</strong>
+            </article>
+            <article class="metric">
+              <span>数值字段</span>
+              <strong id="numericCount">0</strong>
+            </article>
+            <article class="metric">
+              <span>当前文件</span>
+              <strong id="fileName">-</strong>
+            </article>
+          </div>
+
+          <div class="workspace">
+            <section class="chart-panel" aria-label="图表区域">
+              <div class="panel-heading">
+                <div>
+                  <h2 id="chartTitle">图表预览</h2>
+                  <p id="chartHint">选择字段后自动生成图表。</p>
+                </div>
+                <span id="chartBadge" class="badge">本地</span>
+              </div>
+              <div class="chart-frame">
+                <canvas id="chartCanvas" aria-label="数据图表"></canvas>
+              </div>
+            </section>
+
+            <section class="table-panel" aria-label="表格预览">
+              <div class="panel-heading">
+                <div>
+                  <h2>表格预览</h2>
+                  <p id="tableHint">默认显示前 50 行。</p>
+                </div>
+                <span class="badge">Preview</span>
+              </div>
+              <div class="table-wrap">
+                <table id="previewTable"></table>
+              </div>
+            </section>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+    <script src="./vendor/xlsx.full.min.js"></script>
+    <script src="./vendor/chart.umd.min.js"></script>
+    <script src="./src/data-utils.js"></script>
+    <script src="./src/app.js"></script>
+  </body>
+</html>
